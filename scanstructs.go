@@ -33,13 +33,12 @@ func readStructLines(path string)([]string, error) {
 	}
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
-	result = make([]string,0)
+	lines = make([]string,0)
 	for scanner.Scan() {
 		value := scanner.Text()
 		addString(value)
 	}
-	fmt.Println(names)
-	return result,nil
+	return lines,nil
 }
 
 func addString(s string){
@@ -48,14 +47,46 @@ func addString(s string){
 	}
 	s = readLine(s)
 	if s != "" {
-		result = append(result, s)
-		if names==nil{
-			names = make([]string,0)
+		lines = append(lines, s)
+		if structs==nil{
+			structs = make([]Struct,0)
 		}
 		if ((strings.HasPrefix(s, "type ")) && ((strings.Index(s," struct " )>-1)||(strings.Index(s," struct{" )>-1))){
-			names = append(names, strings.TrimSpace(s[len("type "):strings.Index(s," struct")]))
+			str := Struct{
+				Name:strings.TrimSpace(s[len("type "):strings.Index(s," struct")]),
+			}
+			structs = append(structs, str)
+			inStruct = true
+		}
+		if inStruct {
+
+			if s == "}" {
+				inStruct = false
+			}
 		}
 	}
+}
+
+var inComment bool
+var inStruct bool
+
+func removeDoubleSpaces(line string)string{
+	r := ""
+	for i,s := range line{
+		if i < len(line)-1 {
+			if s == '\t' {
+				s = ' '
+			}
+			if ((s == ' ') && (line[i+1]!=' ')) || (s!=' '){
+				r = r + string(s)
+			}
+		}else{
+			if s!=' ' && s!='\t' {
+				r = r + string(s)
+			}
+		}
+	}
+	return r
 }
 
 func readLine(line string)string{
@@ -87,7 +118,38 @@ func readLine(line string)string{
 	return strings.TrimSpace(r)
 }
 
-var inComment bool
-var result []string
-var names []string
+var lines []string
+var structs []Struct
+
+type Struct struct {
+	Name string
+}
+
+type Field struct{
+	Name string
+	Type IType
+}
+
+type Map struct{
+	Type
+	KeyType Type
+	ValueType Type
+}
+
+type Slice struct {
+	Type
+	ValueType Type
+}
+
+type Type struct{
+	TypeName string
+}
+
+func (t Type)GetTypeName() string{
+	return t.TypeName
+}
+
+type IType interface{
+	GetTypeName() string
+}
 
