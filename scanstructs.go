@@ -23,11 +23,11 @@ func FindStructNamesInFile(fileName string)([]string, error){
 	return nil, nil
 }
 
-func readStructLines(path string)([]string, error) {
+func readStructLines(path string)(error) {
 	inFile, err := os.Open(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while reading file: %s\n", err)
-		return nil, err
+		return err
 	} else {
 		defer inFile.Close()
 	}
@@ -38,7 +38,7 @@ func readStructLines(path string)([]string, error) {
 		value := scanner.Text()
 		addString(value)
 	}
-	return lines,nil
+	return nil
 }
 
 func addString(s string){
@@ -52,16 +52,44 @@ func addString(s string){
 			structs = make([]Struct,0)
 		}
 		if ((strings.HasPrefix(s, "type ")) && ((strings.Index(s," struct " )>-1)||(strings.Index(s," struct{" )>-1))){
-			str := Struct{
+			currentStruct = Struct{
 				Name:strings.TrimSpace(s[len("type "):strings.Index(s," struct")]),
 			}
-			structs = append(structs, str)
+			structs = append(structs, currentStruct)
 			inStruct = true
-		}
-		if inStruct {
-
+		}else if inStruct {
 			if s == "}" {
 				inStruct = false
+			}else{
+				s = removeDoubleSpaces(s)
+				sl := strings.Split(s," ")
+				if len(sl)>1{
+					f := Field{
+						Name:sl[0],
+					}
+					t := Type{
+						TypeName:sl[1],
+					}
+					var it IType
+					if strings.HasPrefix(sl[1],"map"){
+						it = Map{
+							Type: t,
+						}
+					}else if strings.HasPrefix(sl[1],"[]"){
+						it = Slice{
+							Type: t,
+						}
+					}else{
+						it = Type{
+							TypeName:sl[1],
+						}
+					}
+					f.Type = it
+					if currentStruct.Fields == nil {
+						currentStruct.Fields = make([]Field,0)
+					}
+					currentStruct.Fields = append(currentStruct.Fields, f)
+				}
 			}
 		}
 	}
@@ -69,15 +97,17 @@ func addString(s string){
 
 var inComment bool
 var inStruct bool
+var structs []Struct
+var currentStruct Struct
 
 func removeDoubleSpaces(line string)string{
 	r := ""
 	for i,s := range line{
+		if s == '\t' {
+			s = ' '
+		}
 		if i < len(line)-1 {
-			if s == '\t' {
-				s = ' '
-			}
-			if ((s == ' ') && (line[i+1]!=' ')) || (s!=' '){
+			if ((s == ' ') && (line[i+1]!=' ' && line[i+1]!='\t')) || (s!=' '){
 				r = r + string(s)
 			}
 		}else{
@@ -119,10 +149,10 @@ func readLine(line string)string{
 }
 
 var lines []string
-var structs []Struct
 
 type Struct struct {
 	Name string
+	Fields []Field
 }
 
 type Field struct{

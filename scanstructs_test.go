@@ -7,13 +7,15 @@ import (
 )
 
 func TestScanStructs(t *testing.T){
-	result, err := readStructLines("scanstructnames.go")
+	err := readStructLines("scanstructnames.go")
 	if err!= nil{
 		fmt.Errorf(err.Error())
 	}
-	r := strings.Join(result," ")
-	if "package BuilderPattern type NameOne struct{ } type NameTwo struct{ } type NameThree struct{  } type NameFive struct{ }  type NameSeven struct{  }" != r {
-		t.Error("strings should be equal")
+	for _,s := range structs{
+		fmt.Println(s.Name)
+		for _,f := range s.Fields{
+			fmt.Println("\t"+f.Name+" "+f.Type.GetTypeName())
+		}
 	}
 }
 
@@ -30,10 +32,10 @@ func TestRemoveDoubleSpaces(t *testing.T){
 			t.Errorf("*%s* (p)should be equal with *%s* (r), input was *%s* (s)", p, r, s)
 		}
 	}
-	s := "aaaaa  aaaaa" //double aaaaa
+	s := "aaaaa  aaaaa" //double space
 	r := "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa  aaaaa  aaaaa" //2 double aaaaa
+	s = "aaaaa  aaaaa  aaaaa" //2 double space
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
 	s = "aaaaa		aaaaa" //double tab
@@ -42,22 +44,22 @@ func TestRemoveDoubleSpaces(t *testing.T){
 	s = "aaaaa		aaaaa		aaaaa" //2 double tab
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa 	aaaaa" //aaaaa tab
+	s = "aaaaa 	aaaaa" //space tab
 	r = "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa 	aaaaa 	aaaaa" //2 aaaaa tab
+	s = "aaaaa 	aaaaa 	aaaaa" //2 space tab
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa	 aaaaa" //tab aaaaa
+	s = "aaaaa	 aaaaa" //tab space
 	r = "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa	 aaaaa	 aaaaa" //2 tab aaaaa
+	s = "aaaaa	 aaaaa	 aaaaa" //2 tab space
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa   aaaaa" //three aaaaa
+	s = "aaaaa   aaaaa" //three space
 	r = "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa   aaaaa   aaaaa" //2 three aaaaa
+	s = "aaaaa   aaaaa   aaaaa" //2 three space
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
 	s = "aaaaa			aaaaa" //three tab
@@ -66,16 +68,16 @@ func TestRemoveDoubleSpaces(t *testing.T){
 	s = "aaaaa			aaaaa			aaaaa" //2 three tab
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa 	 aaaaa" //aaaaa tab aaaaa
+	s = "aaaaa 	 aaaaa" //space tab space
 	r = "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa 	 aaaaa 	 aaaaa" //2 aaaaa tab aaaaa
+	s = "aaaaa 	 aaaaa 	 aaaaa" //2 space tab space
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa	 	aaaaa" //tab aaaaa tab
+	s = "aaaaa	 	aaaaa" //tab space tab
 	r = "aaaaa aaaaa"
 	test(s,r)
-	s = "aaaaa	 	aaaaa	 	aaaaa" //2 tab aaaaa tab
+	s = "aaaaa	 	aaaaa	 	aaaaa" //2 tab space tab
 	r = "aaaaa aaaaa aaaaa"
 	test(s,r)
 }
