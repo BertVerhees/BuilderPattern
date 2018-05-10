@@ -1,4 +1,4 @@
-package BuilderPattern
+package main
 
 import (
 	"os"
@@ -12,9 +12,13 @@ const(
 	CLOSE_COMMENT = "*/"
 	)
 
+func main(){
+
+}
+
 
 func FindStructNamesInFile(fileName string)([]string, error){
-	//readLine("/home/verhees/OpenEhr/development/GO/src/BuilderPattern/scanstructnames.go")
+	//readLine("/home/verhees/OpenEhr/development/GO/src/BuilderPattern/scanstructnames_test.go")
 	//data, err := ioutil.ReadFile(fileName)
 	//if err != nil {
 	//	fmt.Fprintf(os.Stderr, "Error while reading file: %s\n", err)
@@ -23,7 +27,7 @@ func FindStructNamesInFile(fileName string)([]string, error){
 	return nil, nil
 }
 
-func readStructLines(path string)(error) {
+func readStructs(path string)(error) {
 	inFile, err := os.Open(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while reading file: %s\n", err)
@@ -49,10 +53,10 @@ func addString(s string){
 	if s != "" {
 		lines = append(lines, s)
 		if structs==nil{
-			structs = make([]Struct,0)
+			structs = make([]*Struct,0)
 		}
 		if ((strings.HasPrefix(s, "type ")) && ((strings.Index(s," struct " )>-1)||(strings.Index(s," struct{" )>-1))){
-			currentStruct = Struct{
+			currentStruct = &Struct{
 				Name:strings.TrimSpace(s[len("type "):strings.Index(s," struct")]),
 			}
 			structs = append(structs, currentStruct)
@@ -64,29 +68,19 @@ func addString(s string){
 				s = removeDoubleSpaces(s)
 				sl := strings.Split(s," ")
 				if len(sl)>1{
-					f := Field{
+					f := &Field{
 						Name:sl[0],
 					}
-					t := Type{
-						TypeName:sl[1],
-					}
-					var it IType
 					if strings.HasPrefix(sl[1],"map"){
-						it = Map{
-							Type: t,
-						}
+						f.Type = &Map{}
 					}else if strings.HasPrefix(sl[1],"[]"){
-						it = Slice{
-							Type: t,
-						}
-					}else{
-						it = Type{
-							TypeName:sl[1],
-						}
+						f.Type = &Slice{}
+					}else {
+						f.Type = &NormalType{}
 					}
-					f.Type = it
+					f.Type.SetTypeName(sl[1])
 					if currentStruct.Fields == nil {
-						currentStruct.Fields = make([]Field,0)
+						currentStruct.Fields = make([]*Field,0)
 					}
 					currentStruct.Fields = append(currentStruct.Fields, f)
 				}
@@ -97,8 +91,8 @@ func addString(s string){
 
 var inComment bool
 var inStruct bool
-var structs []Struct
-var currentStruct Struct
+var structs []*Struct
+var currentStruct *Struct
 
 func removeDoubleSpaces(line string)string{
 	r := ""
@@ -152,7 +146,7 @@ var lines []string
 
 type Struct struct {
 	Name string
-	Fields []Field
+	Fields []*Field
 }
 
 type Field struct{
@@ -161,25 +155,34 @@ type Field struct{
 }
 
 type Map struct{
-	Type
-	KeyType Type
-	ValueType Type
+	NormalType
+	KeyType IType
+	ValueType IType
 }
 
 type Slice struct {
-	Type
-	ValueType Type
+	NormalType
+	ValueType IType
 }
 
-type Type struct{
+type NormalType struct{
+	TypeDescription
+}
+
+type TypeDescription struct{
 	TypeName string
 }
 
-func (t Type)GetTypeName() string{
+func (t *TypeDescription)SetTypeName(s string) {
+	t.TypeName = s
+}
+
+func (t TypeDescription)GetTypeName()string{
 	return t.TypeName
 }
 
 type IType interface{
-	GetTypeName() string
+	SetTypeName(s string)
+	GetTypeName()string
 }
 

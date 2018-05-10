@@ -1,4 +1,4 @@
-package BuilderPattern
+package main
 
 type NameLower struct{
 	bo bool
