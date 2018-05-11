@@ -1,3 +1,14 @@
+/*
+ * component:   "BuilderPattern"
+ * description: "file to generate builderpattern boilerplate"
+ * keywords:    "builderpattern"
+ *
+ * author:      "Bert Verhees"
+ * copyright:   "Copyright (c) 2017 ROSA Software Netherlands"
+ * license:     "See notice at bottom of class"
+ *
+ */
+
 package main
 
 import (
@@ -72,6 +83,11 @@ func writeBuildFunction(f *os.File, str *Struct){
 func writePublicConstructor(f *os.File, str *Struct){
 	f.WriteString("type " + str.Name + "Builder struct {" + "\n")
 	f.WriteString("	" + str.Name + "\n")
+	f.WriteString("}" + "\n")
+	f.WriteString("\n")
+	f.WriteString("func New" + str.Name + "Builder()*" + str.Name + "Builder{" + "\n")
+	f.WriteString("	b := &" + str.Name + "Builder{}" + "\n")
+	f.WriteString("	return b" + "\n")
 	f.WriteString("}" + "\n")
 	f.WriteString("\n")
 }
@@ -267,3 +283,28 @@ type IType interface{
 	GetTypeName()string
 }
 
+/*
+ * ***** BEGIN LICENSE BLOCK ***** Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the 'License'); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an 'AS IS' basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+ * the specific language governing rights and limitations under the License.
+ *
+ * The Original Code is scanstructs.go
+ *
+ * The Initial Developer of the Original Code is Bert Verhees. Portions created by
+ * the Initial Developer are Copyright (C) 2017-2018 the Initial Developer. All
+ * Rights Reserved.
+ *
+ * Contributor(s): Bert Verhees
+ *
+ * Software distributed under the License is distributed on an 'AS IS' basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+ * the specific language governing rights and limitations under the License.
+ *
+ * ***** END LICENSE BLOCK *****
+ */

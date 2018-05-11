@@ -17,6 +17,7 @@ func TestScanStructs(t *testing.T){
 		}
 	}
 	readStructs("scanstructnames_test.go")
+	createBuilders()
 	if len(structs)!=5{
 		t.Error("There must be five structs discovered")
 	}
