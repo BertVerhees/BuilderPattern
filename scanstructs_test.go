@@ -2,7 +2,6 @@ package main
 
 import (
 	"testing"
-	"fmt"
 	"strings"
 )
 
@@ -17,10 +16,7 @@ func TestScanStructs(t *testing.T){
 			}
 		}
 	}
-	err := readStructs("scanstructnames_test.go")
-	if err!= nil{
-		fmt.Errorf(err.Error())
-	}
+	readStructs("scanstructnames_test.go")
 	if len(structs)!=5{
 		t.Error("There must be five structs discovered")
 	}

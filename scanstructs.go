@@ -2,36 +2,115 @@ package main
 
 import (
 	"os"
-	"fmt"
 	"bufio"
 	"strings"
+	"log"
+	"reflect"
+	"fmt"
 )
 
-const(
-	OPEN_COMMENT = "/*"
-	CLOSE_COMMENT = "*/"
-	)
-
 func main(){
-
+	if len(os.Args)>1{
+		fileName := os.Args[1]
+		readStructs(fileName)
+		createBuilders()
+	}else{
+		fmt.Println("Use like this: BuilderPattern fileWithStrucs.go")
+	}
 }
 
-
-func FindStructNamesInFile(fileName string)([]string, error){
-	//readLine("/home/verhees/OpenEhr/development/GO/src/BuilderPattern/scanstructnames_test.go")
-	//data, err := ioutil.ReadFile(fileName)
-	//if err != nil {
-	//	fmt.Fprintf(os.Stderr, "Error while reading file: %s\n", err)
-	//	return nil, err
-	//}
-	return nil, nil
+func createBuilders() {
+	for _, s := range structs {
+		filename := s.Name + "_builder.go"
+		if file_is_exists(filename) {
+			log.Fatalf("File %s already exist, please move out of the way.", filename)
+		}
+	}
+	for _, str := range structs {
+		filename := str.Name + "_builder.go"
+		writeBuilderFile(filename, str)
+	}
 }
 
-func readStructs(path string)(error) {
+func writeBuilderFile(s string, str *Struct){
+	f, err := os.Create(s)
+	if err!=nil{
+		log.Fatal("Error while creating file %s", s)
+	}
+	defer f.Close()
+	f.WriteString(packageHeader+"\n")
+	if err!=nil{
+		log.Fatal("Error while writing in file %s", s)
+	}
+	f.WriteString("\n")
+	writePublicConstructor(f, str)
+	writePrivateConstructor(f, str)
+	writeWithFunctions(f, str)
+	writeBuildFunction(f, str)
+}
+
+func isInstanceOf(objectPtr, typePtr interface{}) bool {
+	return reflect.TypeOf(objectPtr) == reflect.TypeOf(typePtr)
+}
+
+func writeWithFunctions(f *os.File, str *Struct){
+	for _,p := range str.Fields{
+		f.WriteString("func (b *" + str.Name + "Builder) With" + p.Name + "(value "+ p.Type.GetTypeName() + ") *" + str.Name + "Builder {" + "\n")
+		f.WriteString("	b." + p.Name + " = value" + "\n")
+		f.WriteString("	return b" + "\n")
+		f.WriteString("}" + "\n")
+		f.WriteString("\n")
+	}
+}
+
+func writeBuildFunction(f *os.File, str *Struct){
+	f.WriteString("func (b *" + str.Name + "Builder) Build() *" + str.Name + " {" + "\n")
+	f.WriteString("	return new" + str.Name + "(b)" + "\n")
+	f.WriteString("}" + "\n")
+}
+
+func writePublicConstructor(f *os.File, str *Struct){
+	f.WriteString("type " + str.Name + "Builder struct {" + "\n")
+	f.WriteString("	" + str.Name + "\n")
+	f.WriteString("}" + "\n")
+	f.WriteString("\n")
+}
+
+func writePrivateConstructor(f *os.File, str *Struct){
+	f.WriteString("func new"+str.Name+"(b *"+str.Name+"Builder) *"+str.Name+" {"+"\n")
+	f.WriteString("	s := &"+str.Name+"{}"+"\n")
+	for _,p := range str.Fields{
+		if isInstanceOf(p.Type, (*NormalType)(nil)) {
+			f.WriteString("	s." + p.Name + " = b." + p.Name + "\n")
+		}else if  isInstanceOf(p.Type, (*Map)(nil)){
+			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+")"+ "\n")
+			f.WriteString("	for k,v := range b." + p.Name +  " {"+ "\n")
+			f.WriteString("		s." + p.Name + "[k] = v"+ "\n")
+			f.WriteString("	}"+ "\n")
+		}else if  isInstanceOf(p.Type, (*Slice)(nil)){
+			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+",0)"+ "\n")
+			f.WriteString("	for _,v := range b." + p.Name +  " {"+ "\n")
+			f.WriteString("		s." + p.Name + " = append(s." + p.Name + ",v)"+ "\n")
+			f.WriteString("	}"+ "\n")
+		}
+	}
+	f.WriteString("	return s"+"\n")
+	f.WriteString("}" + "\n")
+	f.WriteString("\n")
+}
+
+func file_is_exists(f string) bool {
+	_, err := os.Stat(f)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return err == nil
+}
+
+func readStructs(path string) {
 	inFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while reading file: %s\n", err)
-		return err
+		log.Fatal(os.Stderr, "Error while reading file: %s\n", err)
 	} else {
 		defer inFile.Close()
 	}
@@ -42,7 +121,6 @@ func readStructs(path string)(error) {
 		value := scanner.Text()
 		addString(value)
 	}
-	return nil
 }
 
 func addString(s string){
@@ -85,6 +163,8 @@ func addString(s string){
 					currentStruct.Fields = append(currentStruct.Fields, f)
 				}
 			}
+		}else if strings.HasPrefix(s, "package ") {
+			packageHeader = s
 		}
 	}
 }
@@ -93,6 +173,7 @@ var inComment bool
 var inStruct bool
 var structs []*Struct
 var currentStruct *Struct
+var packageHeader string
 
 func removeDoubleSpaces(line string)string{
 	r := ""
