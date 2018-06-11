@@ -105,7 +105,7 @@ func writePrivateConstructor(f *os.File, str *Struct){
 			f.WriteString("	}"+ "\n")
 		}else if  isInstanceOf(p.Type, (*Slice)(nil)){
 			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+",0)"+ "\n")
-			f.WriteString("	if b != nil {" + "\n")
+			f.WriteString("	if b." + p.Name +" != nil {" + "\n")
 			f.WriteString("		for _,v := range b." + p.Name +  " {"+ "\n")
 			f.WriteString("			s." + p.Name + " = append(s." + p.Name + ",v)"+ "\n")
 			f.WriteString("		}"+ "\n")
