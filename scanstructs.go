@@ -67,7 +67,7 @@ func isInstanceOf(objectPtr, typePtr interface{}) bool {
 func writeWithFunctions(f *os.File, str *Struct){
 	for _,p := range str.Fields{
 		f.WriteString("func (b *" + str.Name + "Builder) With" + p.Name + "(value "+ p.Type.GetTypeName() + ") *" + str.Name + "Builder {" + "\n")
-		f.WriteString("	b." + p.Name + " = value" + "\n")
+		f.WriteString("	b." + str.VarName + "." + p.Name + " = value" + "\n")
 		f.WriteString("	return b" + "\n")
 		f.WriteString("}" + "\n")
 		f.WriteString("\n")
@@ -82,11 +82,12 @@ func writeBuildFunction(f *os.File, str *Struct){
 
 func writePublicConstructor(f *os.File, str *Struct){
 	f.WriteString("type " + str.Name + "Builder struct {" + "\n")
-	f.WriteString("	" + str.Name + "\n")
+	f.WriteString("	" + str.VarName + "	*" + str.Name + "\n")
 	f.WriteString("}" + "\n")
 	f.WriteString("\n")
 	f.WriteString("func New" + str.Name + "Builder()*" + str.Name + "Builder{" + "\n")
 	f.WriteString("	b := &" + str.Name + "Builder{}" + "\n")
+	f.WriteString("	b." + str.VarName + " = &" + str.Name + "{}\n")
 	f.WriteString("	return b" + "\n")
 	f.WriteString("}" + "\n")
 	f.WriteString("\n")
@@ -97,18 +98,18 @@ func writePrivateConstructor(f *os.File, str *Struct){
 	f.WriteString("	s := &"+str.Name+"{}"+"\n")
 	for _,p := range str.Fields{
 		if isInstanceOf(p.Type, (*NormalType)(nil)) {
-			f.WriteString("	s." + p.Name + " = b." + p.Name + "\n")
+			f.WriteString("	s." + p.Name + " = b." + str.VarName + "." + p.Name + "\n")
 		}else if  isInstanceOf(p.Type, (*Map)(nil)){
 			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+")"+ "\n")
-			f.WriteString("	if b." + p.Name +" != nil {" + "\n")
-			f.WriteString("		for k,v := range b." + p.Name +  " {"+ "\n")
+			f.WriteString("	if b." + str.VarName + "." + p.Name +" != nil {" + "\n")
+			f.WriteString("		for k,v := range b." + str.VarName + "." + p.Name +  " {"+ "\n")
 			f.WriteString("			s." + p.Name + "[k] = v"+ "\n")
 			f.WriteString("		}"+ "\n")
 			f.WriteString("	}"+ "\n")
 		}else if  isInstanceOf(p.Type, (*Slice)(nil)){
 			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+",0)"+ "\n")
-			f.WriteString("	if b." + p.Name +" != nil {" + "\n")
-			f.WriteString("		for _,v := range b." + p.Name +  " {"+ "\n")
+			f.WriteString("	if b." + str.VarName + "." + p.Name +" != nil {" + "\n")
+			f.WriteString("		for _,v := range b." + str.VarName + "." + p.Name +  " {"+ "\n")
 			f.WriteString("			s." + p.Name + " = append(s." + p.Name + ",v)"+ "\n")
 			f.WriteString("		}"+ "\n")
 			f.WriteString("	}"+ "\n")
@@ -154,8 +155,10 @@ func addString(s string){
 			structs = make([]*Struct,0)
 		}
 		if ((strings.HasPrefix(s, "type ")) && ((strings.Index(s," struct " )>-1)||(strings.Index(s," struct{" )>-1))){
+			name := strings.TrimSpace(s[len("type "):strings.Index(s," struct")])
 			currentStruct = &Struct{
-				Name:strings.TrimSpace(s[len("type "):strings.Index(s," struct")]),
+				Name: name,
+				VarName: "__" + strings.ToLower(name),
 			}
 			structs = append(structs, currentStruct)
 			inStruct = true
@@ -247,6 +250,7 @@ var lines []string
 
 type Struct struct {
 	Name string
+	VarName string
 	Fields []*Field
 }
 
