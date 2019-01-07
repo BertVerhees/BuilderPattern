@@ -39,57 +39,70 @@ You can then use it in code like:
 
     package main
   
-    type NameSlicesBuilder struct {
-	    NameSlices
-    }
     
-    func NewNameSlicesBuilder()*NameSlicesBuilder{
-    	b := &NameSlicesBuilder{}
-    	return b
+
+    type NameSlicesBuilder struct {
+	    __nameslices	*NameSlices
     }
-    ``
+
+    func NewNameSlicesBuilder()*NameSlicesBuilder{
+	    b := &NameSlicesBuilder{}
+	    b.__nameslices = &NameSlices{}
+	    return b
+    }
+
     func newNameSlices(b *NameSlicesBuilder) *NameSlices {
 	    s := &NameSlices{}
 	    s.S1 = make([]string,0)
-	    for _,v := range b.S1 {
-		    s.S1 = append(s.S1,v)
+	    if b.__nameslices.S1 != nil {
+		    for _,v := range b.__nameslices.S1 {
+			    s.S1 = append(s.S1,v)
+		    }
 	    }
 	    s.S2 = make([]int,0)
-	    for _,v := range b.S2 {
-		    s.S2 = append(s.S2,v)
+	    if b.__nameslices.S2 != nil {
+		    for _,v := range b.__nameslices.S2 {
+			    s.S2 = append(s.S2,v)
+		    }
 	    }
 	    s.Sc1 = make([]NameLower,0)
-	    for _,v := range b.Sc1 {
-		    s.Sc1 = append(s.Sc1,v)
+	    if b.__nameslices.Sc1 != nil {
+		    for _,v := range b.__nameslices.Sc1 {
+			    s.Sc1 = append(s.Sc1,v)
+		    }
 	    }
 	    s.Scp1 = make([]*NameLower,0)
-	    for _,v := range b.Scp1 {
-		    s.Scp1 = append(s.Scp1,v)
+	    if b.__nameslices.Scp1 != nil {
+		    for _,v := range b.__nameslices.Scp1 {
+			    s.Scp1 = append(s.Scp1,v)
+		    }
 	    }
 	    return s
     }
     
     func (b *NameSlicesBuilder) WithS1(value []string) *NameSlicesBuilder {
-	    b.S1 = value
+	    b.__nameslices.S1 = value
 	    return b
     }
     
     func (b *NameSlicesBuilder) WithS2(value []int) *NameSlicesBuilder {
-	    b.S2 = value
+	    b.__nameslices.S2 = value
 	    return b
     }
     
     func (b *NameSlicesBuilder) WithSc1(value []NameLower) *NameSlicesBuilder {
-	    b.Sc1 = value
+	    b.__nameslices.Sc1 = value
 	    return b
     }
     
     func (b *NameSlicesBuilder) WithScp1(value []*NameLower) *NameSlicesBuilder {
-	    b.Scp1 = value
+	    b.__nameslices.Scp1 = value
 	    return b
     }
     
     func (b *NameSlicesBuilder) Build() *NameSlices {
 	    return newNameSlices(b)
     }
+    
+        
     
