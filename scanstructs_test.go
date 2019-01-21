@@ -11,15 +11,17 @@ func TestScanStructs(t *testing.T){
 			t.Errorf("The structname should be %s, but is %s", name, str.Name)
 		}
 		for i,f := range str.Fields{
-			if f.Type.GetTypeName() != fields[i].Type.GetTypeName(){
-				t.Errorf("The struct-fields in struct %s are not as expected", name)
+			if f.Type.GetTypeName() != "" {
+				if f.Type.GetTypeName() != fields[i].Type.GetTypeName() {
+					t.Errorf("The struct-fields in struct %s are not as expected", name)
+				}
 			}
 		}
 	}
 	readStructs("scanstructnames_test.go")
 	createBuilders()
-	if len(structs)!=5{
-		t.Error("There must be five structs discovered")
+	if len(structs)!=6{
+		t.Error("There must be 6 structs discovered")
 	}
 	fields := make([]Field,0)
 	fields = append(fields, Field{"bo", &NormalType{TypeDescription{TypeName: "bool"}}})
@@ -50,17 +52,18 @@ func TestScanStructs(t *testing.T){
 	fields = append(fields, Field{"Na2", &NormalType{TypeDescription{"NameUpper"}}})
 	test(structs[2], "NameComplex", fields)
 	fields = make([]Field,0)
+	fields = append(fields, Field{"", &NormalType{TypeDescription{"IncludedType"}}})
 	fields = append(fields, Field{"S1", &NormalType{TypeDescription{"[]string"}}})
 	fields = append(fields, Field{"S2", &NormalType{TypeDescription{"[]int"}}})
 	fields = append(fields, Field{"Sc1", &NormalType{TypeDescription{"[]NameLower"}}})
 	fields = append(fields, Field{"Scp1", &NormalType{TypeDescription{"[]*NameLower"}}})
-	test(structs[3], "NameSlices", fields)
+	test(structs[4], "NameSlices", fields)
 	fields = make([]Field,0)
 	fields = append(fields, Field{"M1", &NormalType{TypeDescription{"map[string]string"}}})
 	fields = append(fields, Field{"M2", &NormalType{TypeDescription{"map[int]string"}}})
 	fields = append(fields, Field{"M3", &NormalType{TypeDescription{"map[string]NameLower"}}})
 	fields = append(fields, Field{"M4", &NormalType{TypeDescription{"map[uint64]*NameComplex"}}})
-	test(structs[4], "NameMaps", fields)
+	test(structs[5], "NameMaps", fields)
 }
 
 

@@ -53,7 +53,12 @@ type NameFour struct{
 }
 */
 
+type IncludedType struct{
+
+}
+
 type NameSlices struct{
+	IncludedType
 	S1 []string
 	S2 []int
 	Sc1 []NameLower

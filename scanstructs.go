@@ -66,8 +66,12 @@ func isInstanceOf(objectPtr, typePtr interface{}) bool {
 
 func writeWithFunctions(f *os.File, str *Struct){
 	for _,p := range str.Fields{
-		f.WriteString("func (b *" + str.Name + "Builder) With" + p.Name + "(value "+ p.Type.GetTypeName() + ") *" + str.Name + "Builder {" + "\n")
-		f.WriteString("	b." + str.VarName + "." + p.Name + " = value" + "\n")
+		pName := p.Name
+		if pName == "" {
+			pName = p.Type.GetTypeName()
+		}
+		f.WriteString("func (b *" + str.Name + "Builder) With" + pName + "(value "+ p.Type.GetTypeName() + ") *" + str.Name + "Builder {" + "\n")
+		f.WriteString("	b." + str.VarName + "." + pName + " = value" + "\n")
 		f.WriteString("	return b" + "\n")
 		f.WriteString("}" + "\n")
 		f.WriteString("\n")
@@ -75,7 +79,7 @@ func writeWithFunctions(f *os.File, str *Struct){
 }
 
 func writeBuildFunction(f *os.File, str *Struct){
-	f.WriteString("func (b *" + str.Name + "Builder) Build() *" + str.Name + " {" + "\n")
+	f.WriteString("func (b *" + str.Name + "Builder) Build() (*" + str.Name + ", error) {" + "\n")
 	f.WriteString("	return new" + str.Name + "(b)" + "\n")
 	f.WriteString("}" + "\n")
 }
@@ -83,6 +87,7 @@ func writeBuildFunction(f *os.File, str *Struct){
 func writePublicConstructor(f *os.File, str *Struct){
 	f.WriteString("type " + str.Name + "Builder struct {" + "\n")
 	f.WriteString("	" + str.VarName + "	*" + str.Name + "\n")
+	f.WriteString("	errors	[]error\n")
 	f.WriteString("}" + "\n")
 	f.WriteString("\n")
 	f.WriteString("func New" + str.Name + "Builder()*" + str.Name + "Builder{" + "\n")
@@ -94,11 +99,27 @@ func writePublicConstructor(f *os.File, str *Struct){
 }
 
 func writePrivateConstructor(f *os.File, str *Struct){
-	f.WriteString("func new"+str.Name+"(b *"+str.Name+"Builder) *"+str.Name+" {"+"\n")
+	f.WriteString("func (b " + str.Name + ") checkForBuildErrors() []error {\n")
+	f.WriteString("  result := make([]error,0)\n")
+	f.WriteString("  // if someError {\n")
+	f.WriteString("  //   result = append(result, fmt.Errorf(......\n")
+	f.WriteString("  // }\n")
+	f.WriteString("  return result\n")
+	f.WriteString("}\n\n")
+
+	f.WriteString("func new"+str.Name+"(b *"+str.Name+"Builder) (*"+str.Name+", error) {"+"\n")
 	f.WriteString("	s := &"+str.Name+"{}"+"\n")
 	for _,p := range str.Fields{
 		if isInstanceOf(p.Type, (*NormalType)(nil)) {
-			f.WriteString("	s." + p.Name + " = b." + str.VarName + "." + p.Name + "\n")
+			if len(p.Name)>0 {
+				f.WriteString("	s." + p.Name + " = b." + str.VarName + "." + p.Name + "\n")
+			}else{
+				f.WriteString("	b.errors = b." + str.VarName + ".checkForBuildErrors()\n")
+				f.WriteString("	if len(b.errors) > 0 {\n")
+				f.WriteString("	  return nil, b.errors[0]\n")
+				f.WriteString("	}\n")
+				f.WriteString("	s." + p.Type.GetTypeName() + " = b." + str.VarName + "." + p.Type.GetTypeName() + "\n")
+			}
 		}else if  isInstanceOf(p.Type, (*Map)(nil)){
 			f.WriteString("	s." + p.Name + " = make("+p.Type.GetTypeName()+")"+ "\n")
 			f.WriteString("	if b." + str.VarName + "." + p.Name +" != nil {" + "\n")
@@ -115,7 +136,7 @@ func writePrivateConstructor(f *os.File, str *Struct){
 			f.WriteString("	}"+ "\n")
 		}
 	}
-	f.WriteString("	return s"+"\n")
+	f.WriteString("	return s, nil"+"\n")
 	f.WriteString("}" + "\n")
 	f.WriteString("\n")
 }
@@ -180,6 +201,16 @@ func addString(s string){
 						f.Type = &NormalType{}
 					}
 					f.Type.SetTypeName(sl[1])
+					if currentStruct.Fields == nil {
+						currentStruct.Fields = make([]*Field,0)
+					}
+					currentStruct.Fields = append(currentStruct.Fields, f)
+				}else if len(sl)==1{//type inclusion
+					f := &Field{
+						Name:"",
+					}
+					f.Type = &NormalType{}
+					f.Type.SetTypeName(sl[0])
 					if currentStruct.Fields == nil {
 						currentStruct.Fields = make([]*Field,0)
 					}
